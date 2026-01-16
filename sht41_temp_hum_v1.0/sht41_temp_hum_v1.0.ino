@@ -5,8 +5,6 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h> 
 
-
-
 //https://github.com/Sensirion/arduino-i2c-sht4x/blob/master/src/SensirionI2cSht4x.h
 //SSD1306 128X64_NONAME
 
@@ -27,15 +25,14 @@ static int16_t error;
   // CLK=14 , DATA=13
 U8G2_SSD1306_128X64_NONAME_1_SW_I2C ssd1306(U8G2_R0, 14, 13 );
 
+const char* ssid       = "your_ssid";
+const char* password   = "your_pw";
+const char* ntpServer = "ntp1.inrim.it";
+const long  gmtOffset_sec = 7200; // italy is UTC+1, so 1*60*60= 3600sec
+//const int   daylightOffset_sec = 3600;  //l'italia usa l'ora legale
 
-    const char* ssid       = "your_ssid";
-    const char* password   = "your_pw";
-    const char* ntpServer = "ntp1.inrim.it";
-    const long  gmtOffset_sec = 7200; // italy is UTC+1, so 1*60*60= 3600sec
-    //const int   daylightOffset_sec = 3600;  //l'italia usa l'ora legale
-
-    WiFiUDP ntpUDP;
-    NTPClient timeClient(ntpUDP, ntpServer);
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, ntpServer);
     
 
 
@@ -58,9 +55,6 @@ void setup() {
   //init and get the time from NTP server
   timeClient.begin();
   timeClient.setTimeOffset(gmtOffset_sec); //può essere inclusa nella dichiarazione di timeClient
-
-
-  
 
   unsigned long epochTime = timeClient.getEpochTime();
    struct tm *ptm = gmtime ((time_t *)&epochTime); 
@@ -91,11 +85,11 @@ void setup() {
 
 }
 
-      //messe fuori dal loop così non vengono resettate a 0 ogni volta che loop ricomincia - PS devi scriverle su EEPROM
-    // in C++ NULL == 0
-    float max_temp=0;
-    float min_temp=0;   
-    //float min_temp = 0;   
+//messe fuori dal loop così non vengono resettate a 0 ogni volta che loop ricomincia - PS devi scriverle su EEPROM
+// in C++ NULL == 0
+float max_temp=0;
+float min_temp=0;   
+//float min_temp = 0;   
 
     
 
@@ -162,9 +156,9 @@ void loop() {
     if(max_temp < aTemperature){
         //Fri 27/06 @ 13:25
         timeClient.update();
-      max_temp = aTemperature;
-      sprintf(max_temp_data, "MAX Temp: %0.2f°C | %d/%d @ %d:%d " , max_temp,  ptm->tm_mday,  ptm->tm_mon+1,  ptm->tm_hour,  ptm->tm_min );
-      Serial.println(max_temp_data);
+        max_temp = aTemperature;
+        sprintf(max_temp_data, "MAX Temp: %0.2f°C | %d/%d @ %d:%d " , max_temp,  ptm->tm_mday,  ptm->tm_mon+1,  ptm->tm_hour,  ptm->tm_min );
+        Serial.println(max_temp_data);
 
     }
 
@@ -206,25 +200,14 @@ void loop() {
 
   } while (ssd1306.nextPage() );
 
-
     delay(2000);
-
 }
 
 
-
-
-
  /* UPDATE: 
-
     (DONE) DATA e ORA --> da NTP servers.
-    - memorizzare la temp max (e poi min) registrata nell'intera giornata, con tanto di DATA e ORA. ES --> Temp Max: 29.80°C | Fri 27/06
-                                                                                                           Temp Min: 15.10°C | Mon 15/12
+    - memorizzare la temp max (e poi min) registrata nell'intera giornata, con tanto di DATA e ORA. ES --> Temp Max: 29.80°C | Fri 27/06                                                                                             Temp Min: 15.10°C | Mon 15/12
     
     - (PERSISTENCE:FAST WAY) per la persistenza anche quando spengo MCU, memorizza le 2 vars nella EEPROM
-    - (PERSISTENCE:SKILLED WAY) memorizzare vars su DB postgresql
-
-
- 
- 
+    - (PERSISTENCE:ADVANCED WAY) memorizzare dati su DB postgresql
  */
